@@ -1,0 +1,29 @@
+pf,f/p/_&&ts,s/t/_&&tʃ,ç/k/_!!fortition (undoing of the 2nd consonant mutation)
+p/b/_#&&t/d/_#&&k/g/_#&&f/v/_#&&s/z/_#&&ʃ/ʒ/_#!!revoicing of final consonants
+s/t/_#!!Wie im Niederdeutsch grot>groß
+a/o/_!!Niederdeutsch reduction of a
+b/v/V_V,_#&&g/x/a_V,o_V,u_V,_#&&g/ç/e_V,i_V,_#!!Niederdeutsch lenition of b/g between 2 vowels or at the end of a word
+g/k/_m&&g/k/_n&&g/k/_ŋ!!Devoicing of g before a nasal consonant (Niederdeutsch)
+ʃ/θ/_p&&s/θ/_t!!fronting/depalatilization of "sp"/"st" (Niederdeutsch)
+aʊ/o:,u/_!!Berlinerisch
+aɪ/e:/_!!Berlinerisch
+øː/e:/_!!Berlinerisch
+y:/i:/_!!Berlinerisch
+ɔɪ/aɪ/_!!Berlinerisch
+ɔ/u/_!!Berlinerisch
+ər/a/_#!!Berlinerisch (suffixe -er)
+gə/g/#_C!!Oberdeutsch
+n//_#!!Oberdeutsch
+z/s/#_!!Oberdeutsch
+s/ʃ/_p,_t!!Alemannisch
+a:/aʊ/C_C!!Schwäbisch
+ɪ/ɛ/_m,_n,_ŋ!!Schwäbisch
+k/x/_&&ç/x/_!!Schweizerdeutsch - more ach-Laut, no ich-Laut
+əl/lə/C_!!Schweizerdeutsch
+aɪ/i:/_&&aʊ/u:/_&&ɔɪ/y:/_!!Schweizerdeutsch - no diphthongs
+bə,pə/b,p/#_r&&tə,də/t,d/#_r!!Schweizerdeutsch
+ɪŋg,ənt/ɪk/_#!!Schweizerdeutsch
+pf/f,p/#_!!Kölsch - partial application of the second consonant mutation
+g/j/_!!Kölsch and Berlinerisch
+r/:/V_C!!Kölsch
+çən/jə,çə/_#!!Kölsch

@@ -1,0 +1,3 @@
+[submodule "ConlangPLG"]
+	path = ConlangPLG
+	url = git@github.com:clefourrier/ConlangPLG.git
