@@ -12,7 +12,8 @@ from rule_change_applier import RuleChangeApplier
 diacritics = {  # Found at https://www.lfsag.unito.it/ipa/index_fr.html
     " ̥", " ̊", "̬", "ʰ", "̹", "̜", "̟", "̠", " ̈", "̽",
     "̩", "̯", "˞", "̤", "̰", "̼", "ʷ", "ʲ", "ˠ", "ˤ", "̴",
-    "̝", "̞", "̘", "̙", "̪", "̺", "̻", " ̃", "ⁿ", "ˡ", "̚"
+    "̝", "̞", "̘", "̙", "̪", "̺", "̻", " ̃", "ⁿ", "ˡ", "̚",
+    "͡"  # affricate symbol
 }
 
 

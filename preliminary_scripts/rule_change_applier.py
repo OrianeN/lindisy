@@ -128,9 +128,13 @@ class RuleChangeApplier:
                         src, trg, ctx = rule.split("/")
                     except ValueError as e:
                         raise ValueError(f"Error on rule in line {line_i}")
+                    # Handle multiple contexts, src, trg
+                    ctx = ctx.split(",")
                     src = src.split(",")
-                    for s in src:
-                        cur_change.append(RuleChange(s, trg.split(","), ctx))
+                    trg = trg.split(",")
+                    for c in ctx:
+                        for s in src:
+                            cur_change.append(RuleChange(s, trg, c))
                 possible_changes.append(cur_change)
         return possible_changes
 

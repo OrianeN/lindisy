@@ -1,4 +1,4 @@
-pf,f/p/_&&ts,s/t/_&&tʃ,ç/k/_!!fortition (undoing of the 2nd consonant mutation)
+pf,f/p/#_,V_&&ts,s/t/#_,V_&&tʃ,ç/k/#_,V_!!fortition (undoing of the 2nd consonant mutation)
 p/b/_#&&t/d/_#&&k/g/_#&&f/v/_#&&s/z/_#&&ʃ/ʒ/_#!!revoicing of final consonants
 s/t/_#!!Wie im Niederdeutsch grot>groß
 a/o/_!!Niederdeutsch reduction of a
