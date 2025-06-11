@@ -90,8 +90,9 @@ class RuleChangeApplier:
             raise TypeError("possible_changes must be of type str (file path) or list")
 
         if num_rules is not None:
+            self.rules_indexes = random.sample(range(len(self.changes)), num_rules)
             self.changes = list(
-                itertools.chain(*random.sample(self.changes, num_rules))
+                itertools.chain(*[self.changes[i] for i in self.rules_indexes])
             )
 
     def apply_changes(self, word):
