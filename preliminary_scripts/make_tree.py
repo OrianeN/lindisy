@@ -3,6 +3,7 @@
 import argparse
 import json
 import random
+import uuid
 
 
 def expand_level_values(value: [list, int], depth: int):
@@ -34,7 +35,7 @@ def generate_tree(depth, min_width_per_level, max_width_per_level, min_rules_per
     # Generate child dialects
     for child_i in range(nb_children):
         # Create node
-        node = {}
+        node = {"id": str(uuid.uuid4()).split("-")[0]}
         # Define number of rules that should be assigned to this dialect
         min_rules = min_rules_per_level[0]
         max_rules = max_rules_per_level[0]

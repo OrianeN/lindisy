@@ -36,10 +36,30 @@ def phonetize_word(word, phonetizer):
     return transcription
 
 
+def load_dialect_rules(dialects_tree, parent_rules=[]):
+    dialect2rules = {}
+    for node in dialects_tree:
+        # Inherit parent rules
+        node_rules = parent_rules.copy()
+        node_rules.extend(node["rules"])
+
+        if "children" not in node:  # Dialect leaf = end of branch
+            dialect2rules[node["id"]] = node_rules
+        else:  # (sub)family of dialects
+            # Recurse for children nodes/dialects
+            dialect2rules.update(load_dialect_rules(
+                node["children"],
+                parent_rules=node_rules
+            ))
+
+    return dialect2rules
+
+
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("corpus", help="Path to a TXT corpus (one example per line)")
-    argparser.add_argument("rules", help="Path to the JSON file with rules for each dialect")
+    argparser.add_argument("rules",
+                           help="Path to the JSON file with rules for each dialect in a hierarchical tree")
     argparser.add_argument("output", help="Path to the output folder")
     argparser.add_argument("--lang", default="deu-Latn", help="Language code supported by Epitran")
 
@@ -47,7 +67,8 @@ if __name__ == "__main__":
 
     # Load rules
     with open(args.rules) as f:
-        rules_dict = json.load(f)
+        dialects_dict = json.load(f)
+        rules_dict = load_dialect_rules(dialects_dict)
     for dialect_id, dialect_rules in rules_dict.items():
         rca = RuleChangeApplier.from_list(dialect_rules)
         rules_dict[dialect_id] = rca
