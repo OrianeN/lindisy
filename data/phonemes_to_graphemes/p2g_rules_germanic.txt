@@ -1,0 +1,49 @@
+# Vowels
+aɪ/ei  # IRL amb: ai/ei
+ʊɪ/ui  # IRL amb: ui/uhi (e.g. ruhig)
+ɔɪ/eu
+aʊ/au
+aː/a  # IRL amb: a/ah
+eː/ee  # IRL amb: e/ee/eh
+ɛː/ã  # IRL amb: e/ä
+iː/ii  # IRL amb: ie/ih/i
+yː/ü
+oː/o
+øː/ö
+uː/u
+a/a
+ɛ/e  # IRL amb: e/ä
+ə/e
+ɪ/i
+ɔ/o
+o/o
+ʏ/ü
+ʊ/u
+œ/ö
+ɐ/r
+
+# Consonants
+b/b
+d/d
+f/f
+ɡ/g
+# g/g
+h/h
+j/j
+k/k
+l/l  # IRL amb: l/ll
+m/m
+n/n
+ŋ/n
+p/p
+r/r
+s/s
+t/t  # IRL amb: d (final)
+v/w
+z/z  # removing ambiguity with <s> (/s/ or /z/)
+x/x  # IRL amb: ch
+ç/ç  # IRL amb: ch/g
+ʃ/sch  # IRL amb: sch/s
+ʔ/_
+ʒ/sch
+θ/θ
