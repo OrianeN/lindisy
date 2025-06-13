@@ -14,6 +14,7 @@ uː/u
 a/a
 ɛ/e  # IRL amb: e/ä
 ə/e
+i/i
 ɪ/i
 ɔ/o
 o/o
@@ -25,7 +26,7 @@ o/o
 # Consonants
 b/b
 d/d
-f/f
+f/f  # IRL amb: f/ff
 ɡ/g
 # g/g
 h/h
@@ -33,11 +34,11 @@ j/j
 k/k
 l/l  # IRL amb: l/ll
 m/m
-n/n
+n/n  # IRL amb: n/en
 ŋ/n
 p/p
 r/r
-s/s
+s/s  # IRL amb: s/ss/ß
 t/t  # IRL amb: d (final)
 v/w
 z/z  # removing ambiguity with <s> (/s/ or /z/)

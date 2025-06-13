@@ -5,6 +5,7 @@ import os
 import unicodedata
 
 import epitran
+from gliner import GLiNER
 import regex as re
 
 from rule_change_applier import RuleChangeApplier
@@ -15,6 +16,8 @@ diacritics = {  # Found at https://www.lfsag.unito.it/ipa/index_fr.html
     "̝", "̞", "̘", "̙", "̪", "̺", "̻", " ̃", "ⁿ", "ˡ", "̚",
     "͡"  # affricate symbol
 }
+
+PH_TEXT = "PH"
 
 
 class Graphemizer:
@@ -55,6 +58,31 @@ class Graphemizer:
         return word_orth
 
 
+class NER:
+    def __init__(self, model_name="urchade/gliner_multi-v2.1"):
+        self.model = GLiNER.from_pretrained(model_name)
+        self.labels = ["named entity", "name", "organization", "work title", "event"]  # TODO Add "web address" (url, email...) ?
+
+    def detect_entities(self, text):
+        entities = self.model.predict_entities(text, self.labels)
+        # TODO Detect also code-switching ? (or maybe filter out sentences where the LID score is <0.98 ?)
+        return entities
+
+    def mask_entities(self, text, ph_text=PH_TEXT):
+        # Extract entities
+        entities = self.detect_entities(text)
+        # Replace spans with ph_text
+        text_masked = text
+        shift = 0
+        for ent in entities:
+            ent_start = shift + ent["start"]
+            ent_end = shift + ent["end"]
+            text_masked = text_masked[:ent_start] + ph_text + text_masked[ent_end:]
+            # Compute shift since the start/end positions of entities should be updated as the text is modified
+            shift += len(ph_text) - (ent_end - ent_start)
+        return text_masked
+
+
 def load_dialect_rules(dialects_tree, parent_rules=[]):
     dialect2rules = {}
     for node in dialects_tree:
@@ -75,12 +103,14 @@ def load_dialect_rules(dialects_tree, parent_rules=[]):
 
 
 def tokenize(line):
-    return re.split(r"([[:^alpha:]])", line)
+    return re.split(r"([[:^alpha:]])", line)  # TODO Add '+' to get groups of non-alpha characters ?
 
 
 def word_needs_transformation(word):
-    # TODO Improve by matching non-German text (abbreviation, foreign word...) --> NER ?
-    return bool(re.match(r"[[:alpha:]]", word))
+    if word == PH_TEXT:
+        return False
+    else:
+        return bool(re.match(r"[[:alpha:]]", word))
 
 
 # TODO Split and mark compound words (xml tags ?) --> https://github.com/repodiac/german_compound_splitter
@@ -121,21 +151,25 @@ if __name__ == "__main__":
     os.makedirs(output_folder)
     corpus_name = os.path.splitext(os.path.basename(args.corpus))[0]
 
-    # Load phonetizer and graphemizer
+    # Load NER model, phonetizer, graphemizer
+    ner = NER()
     phonetizer = epitran.Epitran(args.lang)
     graphemizer = Graphemizer(args.rules_p2g)
 
-    # Phonetize input corpus
+    # Phonetize input corpus  # TODO Refactor to go through input corpus only once
     print(f"Generate phonetic transcription of the input corpus (standard)")
     out_path = os.path.join(output_folder, f"{corpus_name}-standard.txt")
     with open(args.corpus) as f_in, open(out_path, "w") as f_out:
         for line in f_in:
+            # Detect and mask named entities
+            line = ner.mask_entities(line)
             # Tokenize
             units = tokenize(line)
             transcribed_line = ""
             for unit in units:
                 # Phonetize+graphemize words (but keep punctuation and whitespaces as is)
                 if word_needs_transformation(unit):
+                    # TODO Count number of words phonetized + filter if <3
                     unit = phonetize_word(unit, phonetizer)
                     unit = graphemizer.apply_rules(unit)
                 transcribed_line += unit
@@ -148,6 +182,8 @@ if __name__ == "__main__":
         out_path = os.path.join(output_folder, f"{corpus_name}-dialect-{dialect_id}.txt")
         with open(args.corpus) as f_in, open(out_path, "w") as f_out:
             for line in f_in:
+                # Detect and mask named entities
+                line = ner.mask_entities(line)
                 # Tokenize line on all whitespace and punctuation
                 units = tokenize(line)
                 # Dialectify each unit (token, whitespace, punctuation...)
