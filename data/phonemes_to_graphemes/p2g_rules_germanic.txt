@@ -6,7 +6,7 @@ aʊ/au
 aː/a  # IRL amb: a/ah
 eː/ee  # IRL amb: e/ee/eh
 ɛː/ã  # IRL amb: e/ä
-iː/ii  # IRL amb: ie/ih/i
+iː/ie  # IRL amb: ie/ih/ieh/i
 yː/ü
 oː/o
 øː/ö
@@ -18,28 +18,28 @@ i/i
 ɪ/i
 ɔ/o
 o/o
-ʏ/ü
+ʏ/ü  # IRL amb: y
 ʊ/u
 œ/ö
-ɐ/r
+ɐ/er  # IRL amb: r/er  # TODO Make it 'er' if context = C_
 
 # Consonants
 b/b
 d/d
-f/f  # IRL amb: f/ff
+f/f  # IRL amb: f/ff/ph
 ɡ/g
 # g/g
 h/h
-j/j
-k/k
+j/j  # IRL amb: i
+k/k  # IRL amb: ck/g (final)
 l/l  # IRL amb: l/ll
 m/m
-n/n  # IRL amb: n/en
+n/n  # IRL amb: n/en/nn  # TODO Make it 'en' if context = C_$
 ŋ/n
-p/p
+p/p  # IRL amb: b (final)
 r/r
 s/s  # IRL amb: s/ss/ß
-t/t  # IRL amb: d (final)
+t/t  # IRL amb: d (final)/th
 v/w
 z/z  # removing ambiguity with <s> (/s/ or /z/)
 x/x  # IRL amb: ch

@@ -1,3 +1,8 @@
+"""
+Script to convert a corpus in a standard language (German) into a set of synthetic dialects by applying hierarchical rules.
+
+Requires installation of german_compound_splitter --> https://github.com/repodiac/german_compound_splitter
+"""
 
 import argparse
 import json
@@ -5,8 +10,9 @@ import os
 import unicodedata
 
 import epitran
-from gliner import GLiNER
 import regex as re
+from german_compound_splitter import comp_split
+from gliner import GLiNER
 
 from rule_change_applier import RuleChangeApplier
 
@@ -43,6 +49,7 @@ class Graphemizer:
         return rules
 
     def apply_rules(self, word_phones):
+        # TODO Apply capitalization (as found in the input (1st/all/none of the letters)
         word_orth = ""
         remaining_phones = word_phones
         while remaining_phones:
@@ -103,7 +110,7 @@ def load_dialect_rules(dialects_tree, parent_rules=[]):
 
 
 def tokenize(line):
-    return re.split(r"([[:^alpha:]])", line)  # TODO Add '+' to get groups of non-alpha characters ?
+    return re.split(r"([[:^alpha:]]+)", line)  # TODO Add '+' to get groups of non-alpha characters ?
 
 
 def word_needs_transformation(word):
@@ -113,7 +120,24 @@ def word_needs_transformation(word):
         return bool(re.match(r"[[:alpha:]]", word))
 
 
-# TODO Split and mark compound words (xml tags ?) --> https://github.com/repodiac/german_compound_splitter
+def split_compound(word, ahocs):
+    """
+    Split and mark compound word.
+    :param word: str. word to attempt to split
+    :param ahocs: loaded lexicon (ahocs stands for Aho-Corasick search method)
+    :return: list of word parts
+    """
+    try:
+        # TODO Silence prints (temporary mockup function ?)
+        dissection = comp_split.dissect(word, ahocs, only_nouns=False)  # TODO Decide only_nouns value (True tends to oversplit)
+    except IndexError:  # There seems to be a bug with the implementation which raises an error when a word is not found
+        return [word]
+
+    if len(dissection) <= 1:
+        return [word]
+    else:
+        return dissection
+
 
 def phonetize_word(word, phonetizer):
     # Phonetize
@@ -135,6 +159,8 @@ if __name__ == "__main__":
                            help="Path to the TXT file with phoneme-to-grapheme (P2G) rules")
     argparser.add_argument("output", help="Path to the output folder")
     argparser.add_argument("--lang", default="deu-Latn", help="Language code supported by Epitran")
+    argparser.add_argument("--lexicon", default="../data/lexicon/german_utf8_linux.dic",
+                           help="Path to a German lexicon with one word per line (used for compound words splitting")
 
     args = argparser.parse_args()
 
@@ -151,10 +177,11 @@ if __name__ == "__main__":
     os.makedirs(output_folder)
     corpus_name = os.path.splitext(os.path.basename(args.corpus))[0]
 
-    # Load NER model, phonetizer, graphemizer
+    # Load external tools: compound splitter, NER model, phonetizer, graphemizer
     ner = NER()
     phonetizer = epitran.Epitran(args.lang)
     graphemizer = Graphemizer(args.rules_p2g)
+    ahocs = comp_split.read_dictionary_from_file(args.lexicon)  # ahocs stands for Aho-Corasick search method - used by the compound splitter
 
     # Phonetize input corpus  # TODO Refactor to go through input corpus only once
     print(f"Generate phonetic transcription of the input corpus (standard)")
@@ -170,8 +197,14 @@ if __name__ == "__main__":
                 # Phonetize+graphemize words (but keep punctuation and whitespaces as is)
                 if word_needs_transformation(unit):
                     # TODO Count number of words phonetized + filter if <3
-                    unit = phonetize_word(unit, phonetizer)
-                    unit = graphemizer.apply_rules(unit)
+                    # Split if compound word
+                    unit_splits = split_compound(unit, ahocs)
+                    mod_unit = ""
+                    for split in unit_splits:
+                        split = phonetize_word(split, phonetizer)  # TODO Phonetize only if word is in lexicon ?
+                        split = graphemizer.apply_rules(split)
+                        mod_unit += split
+                    unit = mod_unit
                 transcribed_line += unit
             # Write transcribed line to output file
             f_out.write(transcribed_line)
@@ -190,12 +223,17 @@ if __name__ == "__main__":
                 dialectified_str = ""
                 for unit in units:
                     if word_needs_transformation(unit):
-                        # Phonetize
-                        dialect_unit = phonetize_word(unit, phonetizer)
-                        # Apply dialect sound change rule
-                        dialect_unit = rules_dict[dialect_id].apply_changes(dialect_unit)
-                        # Graphemize
-                        dialect_unit = graphemizer.apply_rules(dialect_unit)
+                        # Split if compound word
+                        unit_splits = split_compound(unit, ahocs)
+                        dialect_unit = ""
+                        for split in unit_splits:
+                            # Phonetize
+                            split = phonetize_word(split, phonetizer)
+                            # Apply dialect sound change rule
+                            split = rules_dict[dialect_id].apply_changes(split)
+                            # Graphemize
+                            split = graphemizer.apply_rules(split)
+                            dialect_unit += split
                     else:
                         dialect_unit = unit
                     dialectified_str += dialect_unit
