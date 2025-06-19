@@ -137,8 +137,9 @@ class NER:
 class Dialectifier:
 
     def __init__(self, path_sound_rules: str, path_p2g: str, path_lexicon: str,
-                 output_folder: str, corpus_name: str, lang="deu-Latn"):
+                 output_folder: str, corpus_name: str, lang="deu-Latn", min_words_per_line=3):
         self.sound_rules = load_sound_rules(path_sound_rules)
+        self.min_words_per_line = min_words_per_line
 
         # Load external tools: compound splitter, NER model, phonetizer, graphemizer
         self.ner = NER()
@@ -160,10 +161,10 @@ class Dialectifier:
                 line = self.ner.mask_entities(line)
                 # Tokenize
                 units = self.tokenize(line)
+                nb_words = 0
                 for unit in units:
                     # Phonetize+graphemize words (but keep punctuation and whitespaces as is)
                     if self.word_needs_transformation(unit):
-                        # TODO Count number of words phonetized + filter if <3
                         # TODO Detect type of capitalization
                         # Split if compound word
                         unit_splits = self.split_compound(unit)
@@ -172,8 +173,12 @@ class Dialectifier:
                             split = self.phonetizer(split)
                             mod_splits.append(split)
                         line_units.append(("alpha", mod_splits))
+                        nb_words += 1
                     else:
                         line_units.append(("copy", unit))
+                # Make line empty if too few phonetized words
+                if self.min_words_per_line and nb_words < self.min_words_per_line:
+                    line_units = [["copy", "\n"]]
                 # Write transcribed line to output file
                 f_out.write(json.dumps(line_units)+"\n")
 
