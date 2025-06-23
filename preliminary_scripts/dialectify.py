@@ -16,6 +16,12 @@ from gliner import GLiNER
 
 from rule_change_applier import RuleChangeApplier
 
+UNIT_TYPE_ALPHA_LOWER = "alpha"
+UNIT_TYPE_ALPHA_CAPITALIZED = "Alpha"
+UNIT_TYPE_ALPHA_UPPER = "ALPHA"
+UNIT_TYPE_ALPHA = UNIT_TYPE_ALPHA_LOWER
+UNIT_TYPE_NON_ALPHA = "other"
+
 
 def load_sound_rules(path_sound_rules: str):
     # Load phonetic transformation rules
@@ -91,7 +97,6 @@ class Graphemizer:
         return rules
 
     def apply_rules(self, word_phones):
-        # TODO Apply capitalization (as found in the input (1st/all/none of the letters)
         word_orth = ""
         remaining_phones = word_phones
         while remaining_phones:
@@ -165,20 +170,21 @@ class Dialectifier:
                 for unit in units:
                     # Phonetize+graphemize words (but keep punctuation and whitespaces as is)
                     if self.word_needs_transformation(unit):
-                        # TODO Detect type of capitalization
+                        # Detect type of capitalization
+                        unit_type = self.get_case_type(unit)
                         # Split if compound word
                         unit_splits = self.split_compound(unit)
                         mod_splits = []
                         for split in unit_splits:
                             split = self.phonetizer(split)
                             mod_splits.append(split)
-                        line_units.append(("alpha", mod_splits))
+                        line_units.append((unit_type, mod_splits))
                         nb_words += 1
                     else:
-                        line_units.append(("copy", unit))
+                        line_units.append((UNIT_TYPE_NON_ALPHA, unit))
                 # Make line empty if too few phonetized words
                 if self.min_words_per_line and nb_words < self.min_words_per_line:
-                    line_units = [["copy", "\n"]]
+                    line_units = [[UNIT_TYPE_NON_ALPHA, "\n"]]
                 # Write transcribed line to output file
                 f_out.write(json.dumps(line_units)+"\n")
 
@@ -188,16 +194,19 @@ class Dialectifier:
                 transcribed_line = ""
                 units = json.loads(line.strip())
                 for unit_type, unit_val in units:
-                    if unit_type == "alpha":
+                    if unit_type.lower() == UNIT_TYPE_ALPHA:
                         assert isinstance(unit_val, list)
                         merged_splits = ""
                         for split in unit_val:
                             if dialect_id is not None:
                                 # Apply dialect sound change rules
                                 split = self.sound_rules[dialect_id].apply_changes(split)
+                            # Graphemize sounds
                             split = self.graphemizer.apply_rules(split)
                             merged_splits += split
                         unit_val = merged_splits
+                        # Reapply capitalization as original
+                        unit_val = self.apply_case(unit_val, unit_type)
                     transcribed_line += unit_val
                 # Write transcribed line to output file
                 f_out.write(transcribed_line)
@@ -219,7 +228,7 @@ class Dialectifier:
 
     @staticmethod
     def tokenize(line):
-        return re.split(r"([[:^alpha:]]+)", line)  # TODO Add '+' to get groups of non-alpha characters ?
+        return re.split(r"([[:^alpha:]]+)", line)
 
     @staticmethod
     def word_needs_transformation(word):
@@ -245,6 +254,26 @@ class Dialectifier:
             return [word]
         else:
             return dissection
+
+    @staticmethod
+    def get_case_type(word: str):
+        if word == word.upper():
+            return UNIT_TYPE_ALPHA_UPPER
+        elif word == word.capitalize():
+            return UNIT_TYPE_ALPHA_CAPITALIZED
+        else:
+            return UNIT_TYPE_ALPHA_LOWER
+
+    @staticmethod
+    def apply_case(word, case_type):
+        if case_type == UNIT_TYPE_ALPHA_LOWER:
+            return word
+        elif case_type == UNIT_TYPE_ALPHA_CAPITALIZED:
+            return word.capitalize()
+        elif case_type == UNIT_TYPE_ALPHA_UPPER:
+            return word.upper()
+        else:
+            raise ValueError(f"Case type not recognized: {case_type}")
 
 
 if __name__ == "__main__":
