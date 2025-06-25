@@ -5,7 +5,7 @@ a/o/_!!Niederdeutsch reduction of a
 b/v/V_V,_#&&g/x/a_V,aː_V,o_V,oː_V,ɔ_V,ʊ_V,uː_V,_#&&g/ç/e_V,eː_V,ɛ_V,ɛː_V,ə_V,ɪ_V,iː_V,_#!!Niederdeutsch lenition of b/g between 2 vowels or at the end of a word
 g/k/_m&&g/k/_n&&g/k/_ŋ!!Devoicing of g before a nasal consonant (Niederdeutsch)
 ʃ/θ/_p&&s/θ/_t!!fronting/depalatilization of "sp"/"st" (Niederdeutsch)
-aʊ/oː,u/_!!Berlinerisch
+aʊ/oː,ʊ/_!!Berlinerisch
 aɪ/eː/_!!Berlinerisch
 øː/eː/_!!Berlinerisch
 yː/iː/_!!Berlinerisch
@@ -27,3 +27,11 @@ pf/f,p/#_!!Kölsch - partial application of the second consonant mutation
 g/j/_!!Kölsch and Berlinerisch
 r/ː/V_C!!Kölsch
 çən/jə,çə/_#!!Kölsch
+a/ɒ,æ/_&&a/æ/_C+iŋg,_C+iŋk!!Bairisch (simplified, in theory there are 3 phonemic qualities of 'a')
+t/d/#_,V_V&&p/b/#_,V_V&&k/g/_r,_l,_n,V_V!!Bairisch
+b/p/#s_,#ʃ_,#f_,#h_&&d/t/#s_,#ʃ_,#f_,#h_&&g/k/#s_,#ʃ_,#f_,#h_!!Bairisch (e.g. gehalten --> khoitn)
+z/s/_n!!Bairisch
+x,ç/h/V_V,V_#!!Bairisch
+ç/g,k/n_!!Bairisch
+ə//_!!Bairisch
+øː/ea/_&&aɪ/oa/_&&iː,yː/ia,ʊɪ/_&&uː/ua/_&&ɔɪ/eɪ/_&&oː/oʊ/_!!Bairisch

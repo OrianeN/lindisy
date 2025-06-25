@@ -4,6 +4,8 @@ aɪ/ei  # IRL amb: ai/ei
 ɔɪ/eu
 aʊ/au
 aː/a  # IRL amb: a/ah
+ɒː/å
+æː/àà
 eː/ee  # IRL amb: e/ee/eh
 ɛː/ã  # IRL amb: e/ä
 iː/ie  # IRL amb: ie/ih/ieh/i
@@ -12,6 +14,8 @@ oː/o
 øː/ö
 uː/u
 a/a
+ɒ/å
+æ/à
 ɛ/e  # IRL amb: e/ä
 ə/e
 i/i
@@ -27,8 +31,7 @@ o/o
 b/b
 d/d
 f/f  # IRL amb: f/ff/ph
-ɡ/g
-# g/g
+g/g
 h/h
 j/j  # IRL amb: i
 k/k  # IRL amb: ck/g (final)
@@ -43,7 +46,7 @@ t/t  # IRL amb: d (final)/th
 v/w
 z/z  # removing ambiguity with <s> (/s/ or /z/)
 x/x  # IRL amb: ch
-ç/ç  # IRL amb: ch/g
+ç/ç  # IRL amb: ch/g
 ʃ/sch  # IRL amb: sch/s
 ʔ/_
 ʒ/sch

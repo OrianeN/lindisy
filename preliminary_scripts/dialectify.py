@@ -66,11 +66,19 @@ class Phonetizer:
 
     def __call__(self, word):
         transcription = self.epi.transliterate(word)
-        # Normalize/Simplify diacritics (in phonetic transcription)
+        transcription = self.normalize_transcription(transcription)
+        return transcription
+
+    def normalize_transcription(self, transcription):
+        # Normalize encoding
         transcription = unicodedata.normalize("NFKD", transcription)
+        # Remove all diacritics
         found_diacritics = self.DIACRITICS.intersection(set(transcription))
         if found_diacritics:
             transcription = re.sub(rf"[{''.join(found_diacritics)}]", "", transcription)
+        # Normalize some sounds that look like normal letters
+        transcription = re.sub("ɡ", "g", transcription)
+        transcription = re.sub("ç", "ç", transcription)
         return transcription
 
 
