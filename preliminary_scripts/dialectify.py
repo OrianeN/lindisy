@@ -8,6 +8,7 @@ import argparse
 import json
 import os
 import unicodedata
+from unittest import mock
 
 import epitran
 import regex as re
@@ -253,8 +254,8 @@ class Dialectifier:
         :return: list of word parts
         """
         try:
-            # TODO Silence prints (temporary mockup function ?)
-            dissection = comp_split.dissect(word, self.ahocs, only_nouns=False)  # TODO Decide only_nouns value (True tends to oversplit)
+            with mock.patch("builtins.print"):
+                dissection = comp_split.dissect(word, self.ahocs, only_nouns=False)  # TODO Decide only_nouns value (True tends to oversplit)
         except IndexError:  # An error is raised when a word is not found in the lexicon
             return [word]
 
