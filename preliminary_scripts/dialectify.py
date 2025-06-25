@@ -132,9 +132,86 @@ class NER:
         self.labels = ["named entity", "name", "organization", "work title", "event"]  # TODO Add "web address" (url, email...) ?
 
     def detect_entities(self, text):
-        entities = self.model.predict_entities(text, self.labels)
-        # TODO Detect also code-switching ? (or maybe filter out sentences where the LID score is <0.98 ?)
+        def merge_matches(*m_sets):
+            candidate_set = m_sets[0]
+            for new_set in m_sets[1:]:
+                if not new_set:
+                    continue
+                elif new_set and not candidate_set:
+                    candidate_set = new_set
+                    continue
+                updated_cand_set = []
+                for cand_m in candidate_set:
+                    # Check if an overlapping match exists in the new set
+                    range_cand = range(cand_m["start"], cand_m["end"])
+                    len_cand = cand_m["end"] - cand_m["start"]
+                    found_longer = False
+                    new_to_remove = []
+                    for new_m in new_set:
+                        if new_m["start"] in range_cand or new_m["end"] in range_cand:
+                            len_new = new_m["end"] - new_m["start"]
+                            if len_new >= len_cand:  # longer (or same length)
+                                updated_cand_set.append(new_m)  # Append longer entity instead
+                                new_to_remove.append(new_m)
+                                found_longer = True
+                                break
+                            else:  # short
+                                new_to_remove.append(new_m)
+                        elif new_m["start"] > cand_m["end"]:
+                            break
+                    # Remove invalidated matches from new set
+                    for new_m in new_to_remove:
+                        new_set.remove(new_m)
+                    if not found_longer:
+                        updated_cand_set.append(cand_m)  # Keep original entity
+                # Add remaining entities from the new set + sort
+                updated_cand_set.extend(new_set)
+                updated_cand_set.sort(key=lambda item: item["start"])
+                candidate_set = updated_cand_set
+            return candidate_set
+
+        # Detect URLs and emails manually
+        mail_entities = self.detect_emails(text)
+        url_entities = self.detect_urls(text)
+        # Detect other named entities with a model
+        ner_entities = self.model.predict_entities(text, self.labels)
+        # Merge found entities (keep longest if overlaps)
+        entities = merge_matches(mail_entities, url_entities, ner_entities)
+        # TODO Detect also code-switching ? (filter out sentences where the LID score is <0.98 ? mark words that are not in a lexicon ?)
         return entities
+
+    @staticmethod
+    def detect_emails(text):
+        """Use regex to extract email addresses from text"""
+        matches = re.finditer(r"[\w\d][^\s]+@[^\s]+[^\s\W]", text)
+        matches = list(matches)
+        valid_matches = []
+        if matches:
+            for m in matches:
+                email_candidate = m.group(0)
+                if re.search(r"([\w+.-]+)\@([A-Za-z\d-]{2,}[A-Za-z\d])(\.[A-Za-z]{2,}){1,2}", email_candidate):
+                    valid_matches.append(m)
+        return [NER.match_to_dict(m) for m in valid_matches]
+
+    @staticmethod
+    def detect_urls(text):
+        """Use regex to extract URLS from text.
+        Regex found at https://regex101.com/r/Qtj4KW/1  # TODO Remove final punct from regex matches
+        """
+        matches = list(re.finditer(
+            r"(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)",
+            text))
+        return [NER.match_to_dict(m) for m in matches]
+
+    @staticmethod
+    def match_to_dict(m):
+        """Converts a re.Match object into a dict"""
+        m_dict = {
+            "start": m.start(),
+            "end": m.end(),
+            "text": m.group(0)
+        }
+        return m_dict
 
     def mask_entities(self, text, ph_text=PH_TEXT):
         # Extract entities
