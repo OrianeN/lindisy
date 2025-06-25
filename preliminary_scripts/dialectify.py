@@ -17,10 +17,13 @@ from gliner import GLiNER
 
 from rule_change_applier import RuleChangeApplier
 
+PH_TEXT = "PH"
+
 UNIT_TYPE_ALPHA_LOWER = "alpha"
 UNIT_TYPE_ALPHA_CAPITALIZED = "Alpha"
 UNIT_TYPE_ALPHA_UPPER = "ALPHA"
 UNIT_TYPE_ALPHA = UNIT_TYPE_ALPHA_LOWER
+UNIT_TYPE_PH = PH_TEXT
 UNIT_TYPE_NON_ALPHA = "other"
 
 
@@ -122,7 +125,7 @@ class Graphemizer:
 
 
 class NER:
-    PH_TEXT = "PH"  # TODO Use pseudo-XML instead (<ph>entity</ph>)
+    PH_TEXT = "PH"
 
     def __init__(self, model_name="urchade/gliner_multi-v2.1"):
         self.model = GLiNER.from_pretrained(model_name)
@@ -138,6 +141,7 @@ class NER:
         entities = self.detect_entities(text)
         # Replace spans with ph_text
         text_masked = text
+        ent_texts = []
         shift = 0
         for ent in entities:
             ent_start = shift + ent["start"]
@@ -145,13 +149,15 @@ class NER:
             text_masked = text_masked[:ent_start] + ph_text + text_masked[ent_end:]
             # Compute shift since the start/end positions of entities should be updated as the text is modified
             shift += len(ph_text) - (ent_end - ent_start)
-        return text_masked
+            ent_texts.append(ent["text"])
+        return text_masked, ent_texts
 
 
 class Dialectifier:
 
     def __init__(self, path_sound_rules: str, path_p2g: str, path_lexicon: str,
-                 output_folder: str, corpus_name: str, lang="deu-Latn", min_words_per_line=3):
+                 output_folder: str, corpus_name: str,
+                 lang="deu-Latn", min_words_per_line=3, expand_ph: bool = True):
         self.sound_rules = load_sound_rules(path_sound_rules)
         self.min_words_per_line = min_words_per_line
 
@@ -166,16 +172,20 @@ class Dialectifier:
         self.corpus_name = corpus_name
         self.corpus_prep_path = None
 
+        # Extra options
+        self.expand_ph = expand_ph
+
     def preprocess_corpus(self, corpus_path: str):
         self.corpus_prep_path = self.make_output_path("preprocessed")
         with open(corpus_path) as f_in, open(self.corpus_prep_path, "w") as f_out:
             for line in f_in:
                 line_units = []
                 # Detect and mask named entities
-                line = self.ner.mask_entities(line)
+                line, line_entities = self.ner.mask_entities(line)
                 # Tokenize
                 units = self.tokenize(line)
                 nb_words = 0
+                ent_i = 0
                 for unit in units:
                     # Phonetize+graphemize words (but keep punctuation and whitespaces as is)
                     if self.word_needs_transformation(unit):
@@ -189,8 +199,13 @@ class Dialectifier:
                             mod_splits.append(split)
                         line_units.append((unit_type, mod_splits))
                         nb_words += 1
+                    elif unit == PH_TEXT:
+                        original_ent = line_entities[ent_i]
+                        line_units.append((UNIT_TYPE_PH, original_ent))
+                        ent_i += 1
                     else:
                         line_units.append((UNIT_TYPE_NON_ALPHA, unit))
+                assert ent_i == len(line_entities), f"Missing named entities in preprocessed line"
                 # Make line empty if too few phonetized words
                 if self.min_words_per_line and nb_words < self.min_words_per_line:
                     line_units = [[UNIT_TYPE_NON_ALPHA, "\n"]]
@@ -216,6 +231,12 @@ class Dialectifier:
                         unit_val = merged_splits
                         # Reapply capitalization as original
                         unit_val = self.apply_case(unit_val, unit_type)
+                    elif unit_type == UNIT_TYPE_PH:
+                        if self.expand_ph:
+                            unit_val = f"<ph>{unit_val}</ph>"
+                        else:
+                            unit_val = PH_TEXT
+                    # else: keep as is
                     transcribed_line += unit_val
                 # Write transcribed line to output file
                 f_out.write(transcribed_line)
@@ -241,7 +262,7 @@ class Dialectifier:
 
     @staticmethod
     def word_needs_transformation(word):
-        if word == NER.PH_TEXT:
+        if word == PH_TEXT:
             return False
         else:
             return bool(re.match(r"[[:alpha:]]", word))
@@ -296,6 +317,8 @@ if __name__ == "__main__":
     argparser.add_argument("--lang", default="deu-Latn", help="Language code supported by Epitran")
     argparser.add_argument("--lexicon", default="../data/lexicon/german_utf8_linux.dic",
                            help="Path to a German lexicon with one word per line (used for compound words splitting")
+    argparser.add_argument("--no_expand_ph", action="store_true", default=False,
+                           help="Disable reinserting original placeholders after phonetic transformations")
 
     args = argparser.parse_args()
 
@@ -311,7 +334,8 @@ if __name__ == "__main__":
         path_lexicon=args.lexicon,
         output_folder=output_folder,
         corpus_name=corpus_name,
-        lang=args.lang
+        lang=args.lang,
+        expand_ph=not args.no_expand_ph
     )
 
     # Preprocess corpus
