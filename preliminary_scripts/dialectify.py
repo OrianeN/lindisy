@@ -24,6 +24,7 @@ UNIT_TYPE_ALPHA_CAPITALIZED = "Alpha"
 UNIT_TYPE_ALPHA_UPPER = "ALPHA"
 UNIT_TYPE_ALPHA = UNIT_TYPE_ALPHA_LOWER
 UNIT_TYPE_PH = PH_TEXT
+UNIT_TYPE_OOV = "OOV"
 UNIT_TYPE_NON_ALPHA = "other"
 
 
@@ -129,7 +130,7 @@ class NER:
 
     def __init__(self, model_name="urchade/gliner_multi-v2.1"):
         self.model = GLiNER.from_pretrained(model_name)
-        self.labels = ["named entity", "name", "organization", "work title", "event"]  # TODO Add "web address" (url, email...) ?
+        self.labels = ["named entity", "name", "organization", "work title", "event"]
 
     def detect_entities(self, text):
         def merge_matches(*m_sets):
@@ -234,7 +235,7 @@ class Dialectifier:
 
     def __init__(self, path_sound_rules: str, path_p2g: str, path_lexicon: str,
                  output_folder: str, corpus_name: str,
-                 lang="deu-Latn", min_words_per_line=3, expand_ph: bool = True):
+                 lang="deu-Latn", min_words_per_line=3, expand_ph: bool = True, mark_oov: bool = True):
         self.sound_rules = load_sound_rules(path_sound_rules)
         self.min_words_per_line = min_words_per_line
 
@@ -251,6 +252,7 @@ class Dialectifier:
 
         # Extra options
         self.expand_ph = expand_ph
+        self.mark_oov = mark_oov
 
     def preprocess_corpus(self, corpus_path: str):
         self.corpus_prep_path = self.make_output_path("preprocessed")
@@ -268,14 +270,18 @@ class Dialectifier:
                     if self.word_needs_transformation(unit):
                         # Detect type of capitalization
                         unit_type = self.get_case_type(unit)
-                        # Split if compound word
-                        unit_splits = self.split_compound(unit)
-                        mod_splits = []
-                        for split in unit_splits:
-                            split = self.phonetizer(split)
-                            mod_splits.append(split)
-                        line_units.append((unit_type, mod_splits))
-                        nb_words += 1
+                        # Split if compound word + checks if word was found in a lexicon (otherwise it should not be phonetized)
+                        unit_splits, in_lexicon = self.split_compound(unit)
+                        if in_lexicon:
+                            mod_splits = []
+                            for split in unit_splits:
+                                split = self.phonetizer(split)
+                                mod_splits.append(split)
+                            line_units.append((unit_type, mod_splits))
+                            nb_words += 1
+                        else:
+                            assert len(unit_splits) == 1
+                            line_units.append((UNIT_TYPE_OOV, unit))
                     elif unit == PH_TEXT:
                         original_ent = line_entities[ent_i]
                         line_units.append((UNIT_TYPE_PH, original_ent))
@@ -313,6 +319,8 @@ class Dialectifier:
                             unit_val = f"<ph>{unit_val}</ph>"
                         else:
                             unit_val = PH_TEXT
+                    elif unit_type == UNIT_TYPE_OOV and self.mark_oov:
+                        unit_val = f"<oov>{unit_val}</oov>"
                     # else: keep as is
                     transcribed_line += unit_val
                 # Write transcribed line to output file
@@ -351,16 +359,22 @@ class Dialectifier:
         :param ahocs: loaded lexicon (ahocs stands for Aho-Corasick search method)
         :return: list of word parts
         """
+        in_lexicon = False
         try:
             with mock.patch("builtins.print"):
                 dissection = comp_split.dissect(word, self.ahocs, only_nouns=False)  # TODO Decide only_nouns value (True tends to oversplit)
+            in_lexicon = True
         except IndexError:  # An error is raised when a word is not found in the lexicon
-            return [word]
+            dissection = [word]
 
         if len(dissection) <= 1:
-            return [word]
-        else:
-            return dissection
+            if not dissection and word.lower() not in self.ahocs:  # comp_split sometimes returns None although it is present in the dictionary
+                in_lexicon = False
+            elif dissection and len(dissection[0]) < len(word):  # Check that it matches the full word, as the dissection often return erroneous partial matches
+                in_lexicon = False
+            dissection = [word]
+
+        return dissection, in_lexicon
 
     @staticmethod
     def get_case_type(word: str):
@@ -396,6 +410,8 @@ if __name__ == "__main__":
                            help="Path to a German lexicon with one word per line (used for compound words splitting")
     argparser.add_argument("--no_expand_ph", action="store_true", default=False,
                            help="Disable reinserting original placeholders after phonetic transformations")
+    argparser.add_argument("--no_mark_oov", action="store_true", default=False,
+                           help="Disable embedding of words not found in lexicon with pseudo-XML")
 
     args = argparser.parse_args()
 
@@ -412,7 +428,8 @@ if __name__ == "__main__":
         output_folder=output_folder,
         corpus_name=corpus_name,
         lang=args.lang,
-        expand_ph=not args.no_expand_ph
+        expand_ph=not args.no_expand_ph,
+        mark_oov=not args.no_mark_oov
     )
 
     # Preprocess corpus
